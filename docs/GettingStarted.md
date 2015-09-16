@@ -10,9 +10,9 @@ next: android-setup
 ## Requirements
 
 1. OS X - Only OS X is currently supported
-2. [Homebrew](http://brew.sh/) is the recommended way to install io.js, watchman, and flow.
-3. Install [io.js](https://iojs.org/) 1.0 or newer. io.js is the modern version of Node.
-  - Install **nvm** with [its setup instructions here](https://github.com/creationix/nvm#installation). Then run `nvm install iojs-v2 && nvm alias default iojs-v2`, which installs the latest compatible version of io.js and sets up your terminal so that typing `node` runs io.js. With nvm you can install multiple versions of Node and io.js and easily switch between them.
+2. [Homebrew](http://brew.sh/) is the recommended way to install nvm, watchman, and flow.
+3. Install [Node.js](https://nodejs.org/) 4.0 or newer.
+  - Install **nvm** with Homebrew or [its setup instructions here](https://github.com/creationix/nvm#installation). Then run `nvm install node && nvm alias default node`, which installs the latest version of Node.js and sets up your terminal so you can run it by typing `node`. With nvm you can install multiple versions of Node.js and easily switch between them.
   - New to [npm](https://docs.npmjs.com/)?
 4. `brew install watchman`. We recommend installing [watchman](https://facebook.github.io/watchman/docs/install.html), otherwise you might hit a node file watching bug.
 5. `brew install flow`. If you want to use [flow](http://www.flowtype.org).
@@ -40,11 +40,6 @@ To write React Native apps for Android, you will need to install the Android SDK
 - Hit ⌘-R in your iOS simulator to reload the app and see your change!
 
 **To run the Android app:**
-
-* `$ react-native run-android`
-* Open `index.android.js` in your text editor of choice and edit some lines.
-* Press the menu button (F2 by default, or ⌘-M in Genymotion) and select *Reload JS* to see your change!
-* Run `adb logcat *:S ReactNative:V ReactNativeJS:V` in a terminal to see your app's logs
 
 * `$ react-native run-android`
 * Open `index.android.js` in your text editor of choice and edit some lines.
