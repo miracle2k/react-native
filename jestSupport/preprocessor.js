@@ -8,10 +8,24 @@
  */
 'use strict';
 
-var transformer = require('../packager/transformer.js');
+const createCacheKeyFunction = require('fbjs-scripts/jest/createCacheKeyFunction');
+const path = require('path');
+const transformer = require('../packager/transformer.js');
 
 module.exports = {
   process(src, file) {
-    return transformer.transform(src, file).code;
-  }
+    // Don't transform node_modules, except react-tools which includes the
+    // untransformed copy of React
+    if (file.match(/node_modules\/(?!react-tools\/)/)) {
+      return src;
+    }
+
+    return transformer.transform(src, file, {inlineRequires: true}).code;
+  },
+
+  getCacheKey: createCacheKeyFunction([
+    __filename,
+    path.join(__dirname, '../packager/transformer.js'),
+    require.resolve('babel-core/package.json'),
+  ]),
 };

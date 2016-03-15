@@ -7,11 +7,13 @@
  */
 
 // NOTE: this file is auto-copied from https://github.com/facebook/css-layout
-// @generated SignedSource<<6853e87a84818f1abb6573aee7d6bd55>>
+// @generated SignedSource<<3177826257fea8b5ac1fc9d1d514935a>>
 
 package com.facebook.csslayout;
 
 import javax.annotation.Nullable;
+
+import java.util.Arrays;
 
 /**
  * Class representing CSS spacing (padding, margin, and borders). This is mostly necessary to
@@ -58,8 +60,22 @@ public class Spacing {
    */
   public static final int ALL = 8;
 
+  private static final int[] sFlagsMap = {
+    1, /*LEFT*/
+    2, /*TOP*/
+    4, /*RIGHT*/
+    8, /*BOTTOM*/
+    16, /*VERTICAL*/
+    32, /*HORIZONTAL*/
+    64, /*START*/
+    128, /*END*/
+    256, /*ALL*/
+  };
+
   private final float[] mSpacing = newFullSpacingArray();
   @Nullable private float[] mDefaultSpacing = null;
+  private int mValueFlags = 0;
+  private boolean mHasAliasesSet;
 
   /**
    * Set a spacing value.
@@ -73,6 +89,18 @@ public class Spacing {
   public boolean set(int spacingType, float value) {
     if (!FloatUtil.floatsEqual(mSpacing[spacingType], value)) {
       mSpacing[spacingType] = value;
+
+      if (CSSConstants.isUndefined(value)) {
+        mValueFlags &= ~sFlagsMap[spacingType];
+      } else {
+        mValueFlags |= sFlagsMap[spacingType];
+      }
+
+      mHasAliasesSet =
+          (mValueFlags & sFlagsMap[ALL]) != 0 ||
+          (mValueFlags & sFlagsMap[VERTICAL]) != 0 ||
+          (mValueFlags & sFlagsMap[HORIZONTAL]) != 0;
+
       return true;
     }
     return false;
@@ -103,18 +131,28 @@ public class Spacing {
    * @param spacingType one of {@link #LEFT}, {@link #TOP}, {@link #RIGHT}, {@link #BOTTOM}
    */
   public float get(int spacingType) {
-    int secondType = spacingType == TOP || spacingType == BOTTOM ? VERTICAL : HORIZONTAL;
-    float defaultValue = spacingType == START || spacingType == END ? CSSConstants.UNDEFINED : 0;
-    return
-        !CSSConstants.isUndefined(mSpacing[spacingType])
-            ? mSpacing[spacingType]
-            : !CSSConstants.isUndefined(mSpacing[secondType])
-              ? mSpacing[secondType]
-              : !CSSConstants.isUndefined(mSpacing[ALL])
-                ? mSpacing[ALL]
-                : mDefaultSpacing != null
-                  ? mDefaultSpacing[spacingType]
-                  : defaultValue;
+    float defaultValue = (mDefaultSpacing != null)
+        ? mDefaultSpacing[spacingType]
+        : (spacingType == START || spacingType == END ? CSSConstants.UNDEFINED : 0);
+
+    if (mValueFlags == 0) {
+      return defaultValue;
+    }
+
+    if ((mValueFlags & sFlagsMap[spacingType]) != 0) {
+      return mSpacing[spacingType];
+    }
+
+    if (mHasAliasesSet) {
+      int secondType = spacingType == TOP || spacingType == BOTTOM ? VERTICAL : HORIZONTAL;
+      if ((mValueFlags & sFlagsMap[secondType]) != 0) {
+        return mSpacing[secondType];
+      } else if ((mValueFlags & sFlagsMap[ALL]) != 0) {
+        return mSpacing[ALL];
+      }
+    }
+
+    return defaultValue;
   }
 
   /**
@@ -126,6 +164,29 @@ public class Spacing {
    */
   public float getRaw(int spacingType) {
     return mSpacing[spacingType];
+  }
+
+  /**
+   * Resets the spacing instance to its default state. This method is meant to be used when
+   * recycling {@link Spacing} instances.
+   */
+  void reset() {
+    Arrays.fill(mSpacing, CSSConstants.UNDEFINED);
+    mDefaultSpacing = null;
+    mHasAliasesSet = false;
+    mValueFlags = 0;
+  }
+
+  /**
+   * Try to get start value and fallback to given type if not defined. This is used privately
+   * by the layout engine as a more efficient way to fetch direction-aware values by
+   * avoid extra method invocations.
+   */
+  float getWithFallback(int spacingType, int fallbackType) {
+    return
+        (mValueFlags & sFlagsMap[spacingType]) != 0
+            ? mSpacing[spacingType]
+            : get(fallbackType);
   }
 
   private static float[] newFullSpacingArray() {

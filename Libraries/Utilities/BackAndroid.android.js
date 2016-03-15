@@ -6,15 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * Detect hardware back button presses, and programatically invoke the default back button
- * functionality to exit the app if there are no listeners or if none of the listeners return true.
- *
  * @providesModule BackAndroid
  */
 
 'use strict';
 
-var Set = require('Set');
 var DeviceEventManager = require('NativeModules').DeviceEventManager;
 var RCTDeviceEventEmitter = require('RCTDeviceEventEmitter');
 
@@ -27,8 +23,9 @@ type BackPressEventName = $Enum<{
 var _backPressSubscriptions = new Set();
 
 RCTDeviceEventEmitter.addListener(DEVICE_BACK_EVENT, function() {
+  var backPressSubscriptions = new Set(_backPressSubscriptions);
   var invokeDefault = true;
-  _backPressSubscriptions.forEach((subscription) => {
+  backPressSubscriptions.forEach((subscription) => {
     if (subscription()) {
       invokeDefault = false;
     }
@@ -38,6 +35,22 @@ RCTDeviceEventEmitter.addListener(DEVICE_BACK_EVENT, function() {
   }
 });
 
+/**
+ * Detect hardware back button presses, and programmatically invoke the default back button
+ * functionality to exit the app if there are no listeners or if none of the listeners return true.
+ *
+ * Example:
+ *
+ * ```js
+ * BackAndroid.addEventListener('hardwareBackPress', function() {
+ * 	 if (!this.onMainScreen()) {
+ * 	   this.goBack();
+ * 	   return true;
+ * 	 }
+ * 	 return false;
+ * });
+ * ```
+ */
 var BackAndroid = {
 
   exitApp: function() {
@@ -47,8 +60,11 @@ var BackAndroid = {
   addEventListener: function (
     eventName: BackPressEventName,
     handler: Function
-  ): void {
+  ): {remove: () => void} {
     _backPressSubscriptions.add(handler);
+    return {
+      remove: () => BackAndroid.removeEventListener(eventName, handler),
+    };
   },
 
   removeEventListener: function(
